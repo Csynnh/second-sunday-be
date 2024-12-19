@@ -1,10 +1,2 @@
 #!/bin/bash
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run database migrations (if any)
-# alembic upgrade head
-
-# Start the application with Gunicorn
-exec gunicorn --workers 4 --bind 0.0.0.0:80 app.main:app -k uvicorn.workers.UvicornWorker
+gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:${PORT:-80}
