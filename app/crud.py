@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
-from app.schemas import ProductRequest, ProductResponse
+from schemas import ProductRequest, ProductResponse
 from fastapi import HTTPException
 
 
