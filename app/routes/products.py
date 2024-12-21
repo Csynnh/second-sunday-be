@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app import crud, schemas
+from app.schemas import product as schemas
+from app.cruds import product as crud
 from app.database import get_db
 
 router = APIRouter()
@@ -30,7 +31,9 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{product_id}", response_model=schemas.ProductResponse)
-def update_product(product_id: int, product: schemas.ProductRequest, db: Session = Depends(get_db)):
+def update_product(
+    product_id: int, product: schemas.ProductRequest, db: Session = Depends(get_db)
+):
     db_product = crud.update_product(db=db, product_id=product_id, product=product)
     if db_product is None:
         raise HTTPException(status_code=404, detail="Product not found")

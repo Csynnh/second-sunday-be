@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
-from app.schemas import ProductRequest, ProductResponse
+from app.schemas import product as schemas
 from fastapi import HTTPException
 
 
@@ -72,15 +72,27 @@ def get_product(db: Session, product_id: int):
 def get_products(db: Session, skip: int = 0, limit: int = 10):
     query_str = text(
         """
-        SELECT p.*, pcs.id as product_id, pcs.inventory, s.name as size_name, s.id as size_id, c.name as color_name, c.id as color_id, pcs.images as images
-    FROM dbo.PRODUCT AS p
-    LEFT JOIN dbo.ProductColorSize AS pcs ON pcs.product_id = p.id
-    LEFT JOIN [dbo].[Size] AS s ON s.id = pcs.size_id
-    LEFT JOIN [dbo].[Color] AS c ON c.id = pcs.color_id
-    ORDER BY p.id, pcs.color_id, pcs.size_id
-    OFFSET :skip ROWS
-    FETCH NEXT :limit ROWS ONLY;
-    """
+        SELECT
+            p.*,
+            pcs.id as product_id,
+            pcs.inventory,
+            s.name as size_name,
+            s.id as size_id,
+            c.name as color_name,
+            c.id as color_id,
+            pcs.images as images,
+            p.policy,
+            p.care_instructions,
+            p.rating,
+            p.category_id
+        FROM dbo.PRODUCT AS p
+        LEFT JOIN dbo.ProductColorSize AS pcs ON pcs.product_id = p.id
+        LEFT JOIN [dbo].[Size] AS s ON s.id = pcs.size_id
+        LEFT JOIN [dbo].[Color] AS c ON c.id = pcs.color_id
+        ORDER BY p.id, pcs.color_id, pcs.size_id
+        OFFSET :skip ROWS
+        FETCH NEXT :limit ROWS ONLY;
+        """
     )
     products = db.execute(query_str, {"skip": skip, "limit": limit}).fetchall()
 
@@ -133,6 +145,10 @@ def get_products(db: Session, skip: int = 0, limit: int = 10):
                 "name": product.name,
                 "description": product.description,
                 "price": product.price,
+                "category_id": product.category_id,
+                "policy": product.policy,
+                "care_instructions": product.care_instructions,
+                "rating": product.rating,
                 "colors": [
                     {
                         "id": product.color_id,
@@ -157,7 +173,7 @@ def get_products(db: Session, skip: int = 0, limit: int = 10):
     return result
 
 
-def create_product(db: Session, product: ProductRequest):
+def create_product(db: Session, product: schemas.ProductRequest):
     # Step 1: Check if the product already exists by name using a raw query
     query_str = text(
         """
@@ -168,7 +184,7 @@ def create_product(db: Session, product: ProductRequest):
     db_product = result.fetchone()
 
     if db_product:
-        db_product_id = db_product[0]  # Access the result as a tuple, with 0 for 'id'
+        db_product_id = db_product[0]
     else:
         query_str = text(
             """
@@ -212,16 +228,16 @@ def create_product(db: Session, product: ProductRequest):
             db_color_id = db_color
 
         images_str = (
-            ",".join(color.images)
-            if isinstance(color.images, list)
-            else color.images
+            ",".join(color.images) if isinstance(color.images, list) else color.images
         )
-        color_ids.append({
-            "id": db_color_id.id,
-            "name": db_color_id.name,
-            "images": images_str.split(","),
-            "sizes": [],
-        })
+        color_ids.append(
+            {
+                "id": db_color_id.id,
+                "name": db_color_id.name,
+                "images": images_str.split(","),
+                "sizes": [],
+            }
+        )
         # Step 3: Insert sizes if not already present
         for size in color.sizes:
             query_str = text(
@@ -260,7 +276,8 @@ def create_product(db: Session, product: ProductRequest):
             db_product_color_size = result.fetchone()
             if db_product_color_size:
                 raise HTTPException(
-                    status_code=400, detail="Product already exists with the same color and size"
+                    status_code=400,
+                    detail="Product already exists with the same color and size",
                 )
 
             query_str = text(
@@ -276,18 +293,20 @@ def create_product(db: Session, product: ProductRequest):
                     "color_id": db_color_id.id,
                     "size_id": db_size_id.id,
                     "inventory": size.inventory,
-                    "images": images_str
+                    "images": images_str,
                 },
             )
-            color_ids[-1]["sizes"].append({
-                "id": db_size_id.id,
-                "name": db_size_id.name,
-                "inventory": size.inventory,
-            })
+            color_ids[-1]["sizes"].append(
+                {
+                    "id": db_size_id.id,
+                    "name": db_size_id.name,
+                    "inventory": size.inventory,
+                }
+            )
     db.commit()
 
     # Return the product along with the necessary fields
-    return ProductResponse(
+    return schemas.ProductResponse(
         colors=color_ids,
         description=product.description,
         id=db_product_id,
@@ -295,7 +314,8 @@ def create_product(db: Session, product: ProductRequest):
         price=product.price,
     )
 
-def update_product(db: Session, product_id: int, product: ProductRequest):
+
+def update_product(db: Session, product_id: int, product: schemas.ProductRequest):
     # Step 1: Check if the product exists by id
     query_str = text(
         """
@@ -347,13 +367,14 @@ def update_product(db: Session, product_id: int, product: ProductRequest):
             )
     db.commit()
 
-    return ProductResponse(
+    return schemas.ProductResponse(
         colors=product.colors,
         description=product.description,
         id=product_id,
         name=product.name,
         price=product.price,
     )
+
 
 def delete_product(db: Session, product_id: int):
     # Step 1: Check if the product exists by id
