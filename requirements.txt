@@ -3,3 +3,4 @@ uvicorn
 sqlalchemy
 databases
 pyodbc
+black

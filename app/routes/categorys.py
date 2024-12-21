@@ -35,9 +35,13 @@ def get_categories(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
 
 
 @router.put("/{category_id}", response_model=schemas.CategoryResponse)
-def update_category(category_id: int, category: schemas.CategoryRequest, db: Session = Depends(get_db)):
+def update_category(
+    category_id: int, category: schemas.CategoryRequest, db: Session = Depends(get_db)
+):
     try:
-        db_category = cruds.update_category(db=db, category_id=category_id, category=category)
+        db_category = cruds.update_category(
+            db=db, category_id=category_id, category=category
+        )
         return db_category
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

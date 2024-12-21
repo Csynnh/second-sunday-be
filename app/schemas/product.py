@@ -6,17 +6,21 @@ class SizeBase(BaseModel):
     name: str
     inventory: int
 
+
 class SizeResponse(SizeBase):
     id: int
     sold: Optional[int] = 0
 
+
 class SizeRequest(SizeBase):
     pass
+
 
 class ColorBase(BaseModel):
     name: str
     images: Optional[List[str]]
     sizes: List[SizeBase]
+
 
 class ColorResponse(ColorBase):
     id: int
@@ -45,4 +49,3 @@ class ProductResponse(ProductBase):
 
     class Config:
         from_attributes = True
-

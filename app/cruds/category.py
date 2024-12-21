@@ -4,6 +4,7 @@ from app.schemas.category import CategoryRequest, CategoryResponse
 from fastapi import HTTPException
 from datetime import datetime
 
+
 def create_category(db: Session, category: CategoryRequest):
     try:
         query_str = text(
