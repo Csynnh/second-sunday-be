@@ -1,12 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import os
 
 # Connection string for Azure SQL Database (ODBC Driver 18)
-DATABASE_URL = (
-    "mssql+pyodbc://noir:DHqofMEf4vWY4THANHpCiqWlh41BT7C59G3e6eeQGeUI29H0n@noir-sql-server.database.windows.net:1433/second-sunday"
-    "?driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=no&ConnectionTimeout=30"
-)
+DATABASE_URL = os.environ["DATABASE_URL"]
 
 # Create SQLAlchemy engine
 engine = create_engine(
